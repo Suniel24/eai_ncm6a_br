@@ -3,7 +3,7 @@ name: Build and Release EdgebleAI Buildroot for NCM6A
 on:
   push:
     branches:
-      - master
+      - linux-6.1-stan-rkr1
 
 jobs:
   build:
