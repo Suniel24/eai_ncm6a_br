@@ -1,0 +1,53 @@
+name: Build and Release EdgebleAI Buildroot for NCM6A
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    permissions: write-all
+    name: EdgebleAI NCM6A Buildroot runner
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+
+    - name: Build EdgebleAI
+      run: |
+        cd /home/suniel/wspace/edgeble/temp
+        sudo docker run --rm --tty \
+          --privileged \
+          --net host \
+          -v `pwd`:/home/build/shared \
+          -w /home/build/shared \
+          ghcr.io/edgeble/easy-dock/ubuntu:22.04-v2 \
+          bash -c ".build/buildroot.sh"
+    - name: Archeive buildroot images
+      run: |
+        cd /home/suniel/wspace/edgeble/temp
+        mkdir -p ncm6a-edgebleai-buildroot-wayland-weston-b1/sdk-6.1/rockdev
+        mkdir -p ncm6a-edgebleai-buildroot-wayland-weston-b1/sdk-6.1/tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool
+        cp -v rkflash.sh ncm6a-edgebleai-buildroot-wayland-weston-b1/
+        cp -v sdk-6.1/rockdev/* ncm6a-edgebleai-buildroot-wayland-weston-b1/sdk-6.1/rockdev
+        cp -rfv sdk-6.1/tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool/* ncm6a-edgebleai-buildroot-wayland-weston-b1/sdk-6.1/tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool
+        tar -vJcf ncm6a-edgebleai-buildroot-wayland-weston-b1.tar.xz ncm6a-edgebleai-buildroot-wayland-weston-b1
+        sha256sum ncm6a-edgebleai-buildroot-wayland-weston-b1.tar.xz > ncm6a-edgebleai-buildroot-wayland-weston-b1.tar.xz.sha256
+    - name: Upload output artifacts
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: "build-1-CAM1"
+        body: |
+          ## EdgebleAI Buildroot Build 1 (CAM1)
+          Supported features
+          1. Auto configure network
+          2. GST changes
+        files: |
+          /home/suniel/wspace/edgeble/temp/ncm6a-edgebleai-buildroot-wayland-weston-b1.tar.xz
+          /home/suniel/wspace/edgeble/temp/ncm6a-edgebleai-buildroot-wayland-weston-b1.tar.xz.sha256
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
